@@ -1,0 +1,8 @@
+# Normalize all text files to LF on commit
+* text=auto
+
+# Ensure Python files are treated as text
+*.py text
+
+# If you have any specific files or extensions that need CRLF
+# *.bat text eol=crlf
