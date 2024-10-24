@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import date
 
 # Create your models here.
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -52,11 +53,25 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=50)
     dob = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=100, blank=True, null=True)
+    height = models.CharField(max_length=20, blank=True, null=True)
+    weight = models.CharField(max_length=20, null=True, blank=True)
+    allergies = models.CharField(max_length=500, blank=True, null=True)
+    emergency_contact = models.CharField(max_length=20, blank=True, null=True)
+    blood_type = models.CharField(max_length=10,blank=True,null=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=PATIENT)
 
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+
+
+    def display_age(self):
+        if isinstance(self.dob, date):
+            today = date.today()
+            age = today.year - self.dob.year - ((today.month, today.day) < (self.dob.month,self.dob.day))
+            return age
+        return None
+
 
 
     objects = CustomUserManager()

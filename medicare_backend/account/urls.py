@@ -1,6 +1,7 @@
 from django.urls import path, include
 from djoser import views as djoser_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from . import apis
 
 urlpatterns = [
     # Uncomment the following paths if you want to use custom user views
@@ -12,6 +13,7 @@ urlpatterns = [
     path('auth/token/login/', TokenObtainPairView.as_view(), name='token'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  
     path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('update/<uuid:id>/', apis.update_profile, name='update_profile'),
     
     # Djoser URLs
     path('auth/', include('djoser.urls')),
