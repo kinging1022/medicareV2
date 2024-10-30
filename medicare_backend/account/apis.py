@@ -26,3 +26,10 @@ def update_profile(request,id):
     return Response(serializer.data)
 
     
+@api_view(['GET'])
+def doctors(request):
+    doctors = User.objects.filter(role='doctor')
+
+    serializer = UserSerializer(doctors, many=True)
+
+    return Response(serializer.data)

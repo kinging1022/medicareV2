@@ -50,9 +50,24 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'djoser',
-    'account'
+    'channels',
+    'account',
+    'appointment'
 ]
 
+
+
+
+ASGI_APPLICATION = "medicare_backend.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [('localhost', 6379)],
+        },
+    },
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -125,7 +140,9 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'medicare_backend.wsgi.application'
+#WSGI_APPLICATION = 'medicare_backend.wsgi.application'
+
+
 
 
 # Database

@@ -16,7 +16,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
    
 
     def create(self, validated_data):
-        print(validated_data)
         validated_data.pop('retype_password')
         user = User.objects.create_user(
             email = validated_data['email'],

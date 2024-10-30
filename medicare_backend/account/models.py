@@ -42,9 +42,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     ADMIN = 'admin'
 
     ROLE_CHOICES = [
-        ('patient', 'Patient'),
-        ('doctor', 'Doctor'),
-        ('admin', 'Administrator')
+        (PATIENT, 'Patient'),
+        (DOCTOR, 'Doctor'),
+        (ADMIN, 'Administrator')
     ]
 
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False )
