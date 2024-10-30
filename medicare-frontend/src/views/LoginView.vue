@@ -100,6 +100,7 @@ export default {
 
           
           const userInfo = await axios.get("/api/auth/users/me");
+          console.log(userInfo.data.display_age)
           this.userStore.setUserInfo(userInfo.data);
 
           this.$router.push('/dashboard')

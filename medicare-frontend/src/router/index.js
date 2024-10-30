@@ -6,6 +6,8 @@ import ActivateUserView from '@/views/ActivateUserView.vue'
 import ActivationSuccesView from '@/views/ActivationSuccesView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import UpdateProfileView from '@/views/UpdateProfileView.vue'
+import UpdatePasswordView from '@/views/UpdatePasswordView.vue'
+import RequestAppointment from '@/views/RequestAppointment.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -49,9 +51,19 @@ const router = createRouter({
       component: DashboardView
     },
     {
-      path:'/dashboard/profile/update/:uid',
+      path:'/dashboard/profile/update',
       name: 'updateprofile',
       component: UpdateProfileView
+    },
+    {
+      path:'/dashboard/profile/password/update',
+      name: 'updatepassword',
+      component: UpdatePasswordView
+    },
+    {
+      path:'/dashboard/profile/request-appointment',
+      name: 'requestappointment',
+      component: RequestAppointment
     },
   ]
 })
