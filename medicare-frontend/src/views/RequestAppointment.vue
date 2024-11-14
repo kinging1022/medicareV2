@@ -130,15 +130,33 @@
         this.success = true;
         this.reason = '';  
         },
-        async getDoctors(){
-            try{
-                const response = await axios.get('/api/doctors/')
-                this.doctors = response.data
+        getDoctors(){
+            const ws = new WebSocket('ws://localhost:8000/ws/users/')
+
+            ws.onopen = () =>{
+                ws.send(
+                    JSON.stringify({
+                        action:'list',
+                        request_id : new Date().getTime()
+                    })
+                )
             }
-            catch(error){
-                console.log(error)
-            }
-        }
+            ws.onmessage = (e) => {
+
+            
+                const response = JSON.parse(e.data);
+                if (response.action === 'list') {
+                    let users = response.data;
+                    this.doctors = []; 
+                    for (const user of users) { 
+                        if (user.role === 'doctor') {
+                            this.doctors.push(user); 
+                            }
+                        }
+                        console.log(this.doctors);
+                    }
+                };
+            },
     },
 
   };

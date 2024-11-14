@@ -7,10 +7,12 @@ class Appointment(models.Model):
 
     SENT = 'sent'
     PROCESSED = 'processed'
+    DONE = 'done'
 
     STATUS_CHOICES = (
         (SENT,'Sent'),
-        (PROCESSED,'Processed')
+        (PROCESSED,'Processed'),
+        (DONE, 'Done')
     )
 
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)

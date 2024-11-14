@@ -17,6 +17,6 @@ urlpatterns = [
     
     # Djoser URLs
     path('auth/', include('djoser.urls')),
-    path('doctors/', apis.doctors, name='doctors')
+    
      
 ]

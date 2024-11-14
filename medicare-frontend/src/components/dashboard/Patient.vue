@@ -84,6 +84,7 @@
                                 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
                                 appointment.status === 'processed' ? 'bg-green-100 text-green-800' :
                                 appointment.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+                                appointment.status === 'done' ? 'bg-blue-100 text-blue-800' :
                                 'bg-red-100 text-red-800'
                               ]">
                                 {{ appointment.status }}
@@ -233,6 +234,7 @@ export default {
       appointments: [],
       showReminder: null,
       socket: null,
+      
       patientDetails: {
         name: 'Sarah Johnson',
         age: 35,
@@ -282,8 +284,9 @@ export default {
 
     getAndUpdateAppointments (){
         const ws = new WebSocket('ws://localhost:8000/ws/appointments/');
-
+      
         ws.onopen = () => {
+
             ws.send(
                 JSON.stringify({
                     action: "list",
@@ -294,6 +297,7 @@ export default {
         ws.onmessage = (e) => {
             const allData = JSON.parse(e.data);
             if (allData.action === 'list'){
+              console.log(allData.data)
                 this.appointments = allData.data;
             }else if ( allData.action === "create" ){
                 this.appointments.push(allData.data);

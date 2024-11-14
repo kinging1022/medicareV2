@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'djoser',
     'channels',
     'account',
-    'appointment'
+    'appointment',
+    'consultations'
 ]
 
 

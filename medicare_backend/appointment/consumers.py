@@ -1,7 +1,10 @@
+import json
 from djangochannelsrestframework import permissions
 from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from djangochannelsrestframework.mixins import ListModelMixin
 from djangochannelsrestframework.observer import model_observer
+
+
 
 from .models import Appointment
 from .serializers import AppointmentSerializer
