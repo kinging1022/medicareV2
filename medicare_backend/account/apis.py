@@ -1,8 +1,12 @@
 from rest_framework.response import Response
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from .serializers import UserSerializer
 from .models import User
-
+from rest_framework.permissions import IsAuthenticated
+from consultations.models import Medications
+from consultations.serializers import MedicationsSerializer
 
 @api_view(['PATCH'])
 def update_profile(request,id):
@@ -26,3 +30,17 @@ def update_profile(request,id):
     return Response(serializer.data)
 
 
+@api_view(['GET'])
+def get_medications(request,id):
+
+    medications = Medications.objects.filter(created_for_id = id)
+
+    if not medications.exists():
+        return Response({'detail': "No medications found"}, status=status.HTTP_400_BAD_REQUEST)
+
+    serializer = MedicationsSerializer(medications,many=True)
+
+    return Response(serializer.data)
+   
+
+   

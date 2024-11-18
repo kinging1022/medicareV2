@@ -70,7 +70,7 @@
                     <div class="flow-root">
                       <ul class="-my-5 divide-y divide-gray-200">
                         <li v-for="consultation in patientQueue" :key="consultation.id" class="py-5">
-                          <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                          <div  class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
                             <div class="flex-1 min-w-0">
                               <p class="text-lg font-medium text-gray-900 truncate">
                                 {{ consultation.patient.first_name }}
@@ -278,7 +278,8 @@ export default {
       }
     },
     getOrUpdateConsultations(){
-      const ws = new WebSocket('ws://localhost:8000/ws/consultations/')
+      const token = this.userStore.user.access;
+      const ws = new WebSocket(`ws://localhost:8000/ws/consultations/?token=${token}`)
 
       ws.onopen = () => {
         ws.send(
@@ -295,7 +296,7 @@ export default {
           console.log(consultations)
           if (Array.isArray(consultations)) {
             this.patientQueue = consultations.filter(consultation => 
-              consultation.created_for.id === this.userStore.user.id
+              consultation.status === 'sent'
             );
           } else {
             console.error("Unexpected format for consultations:", consultations);
@@ -320,8 +321,9 @@ export default {
     async createSession(consultation){
       this.selectedConsultation =  consultation
       const patientID = this.selectedConsultation.patient.id
+      const consultationId = this.selectedConsultation.id
       try{
-                const newResponse = await axios.post(`/api/consultation/sessions/create/${patientID}/`)
+                const newResponse = await axios.post(`/api/consultation/sessions/create/${consultationId}/${patientID}/`)
                 //console.log(newResponse.data)
 
                 const sessionId = newResponse.data.id

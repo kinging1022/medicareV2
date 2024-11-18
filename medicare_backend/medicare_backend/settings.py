@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'channels',
     'account',
     'appointment',
-    'consultations'
+    'consultations',
+    'notification'
 ]
 
 

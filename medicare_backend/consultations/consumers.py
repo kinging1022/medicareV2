@@ -19,7 +19,15 @@ from .serializers import SessionMessageSerializer ,SessionDetailSerializer , Ses
 class ConsultationConsumer(ListModelMixin, GenericAsyncAPIConsumer):
     queryset = Consultation.objects.all()
     serializer_class = ConsultationSerializer
-    permission_classes = (permissions.AllowAny,)  # Note the trailing comma
+
+
+    def filter_queryset(self, queryset, **kwargs):
+        """
+        This method must remain synchronous because it will be called by
+        synchronous parts of DRF.
+        """
+        user = self.scope['user']
+        return queryset.filter(created_for=user)
     
 
     async def connect(self):
@@ -42,12 +50,12 @@ class CustomJSONEncoder(json.JSONEncoder):
         if isinstance(obj, uuid.UUID):
             return str(obj)
         return super().default(obj)
-
     
 
 class DoctorSessionConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer):
     queryset = DoctorSession.objects.all()
     serializer_class = SessionDetailSerializer
+    permission_classes = (permissions.IsAuthenticated,) 
     lookup_field = "pk"
 
     async def send_json(self, content, close=False):
@@ -79,8 +87,20 @@ class DoctorSessionConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer)
         await database_sync_to_async(DoctorSessionMessage.objects.create)(
             doctor_session=room,
             created_by=self.scope["user"],
+            type = DoctorSessionMessage.TEXT,
             body=message
         )
+
+    @action()
+    async def create_text_notification(self, message, **kwargs):
+        room: DoctorSession = await self.get_room(pk=self.room_subscribe)
+        await database_sync_to_async(DoctorSessionMessage.objects.create)(
+            doctor_session=room,
+            created_by=self.scope["user"],
+            type = DoctorSessionMessage.NOTIFICATION,
+            body=message
+        )
+
 
     @action()
     async def subscribe_to_messages_in_room(self, pk, **kwargs):
@@ -144,6 +164,5 @@ class DoctorSessionConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer)
                 user.doctor_session.add(DoctorSession.objects.get(pk=pk))
         else:
             print("User is not authenticated. Cannot add to room.")
-
 
 

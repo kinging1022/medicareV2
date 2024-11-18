@@ -41,6 +41,7 @@ class DoctorSession(models.Model):
         (ENDED, 'Ended'),
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    consultation = models.ForeignKey(Consultation,related_name='consultations', on_delete=models.CASCADE)
     users = models.ManyToManyField(User, related_name='doctor_session')
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default=STARTED)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -51,9 +52,18 @@ class DoctorSession(models.Model):
         return timesince(self.created_at)
     
 class DoctorSessionMessage(models.Model):
+    TEXT = 'text'
+    NOTIFICATION = 'notification'
+
+    MESSAGE_CHOICE = (
+        (TEXT, 'Text'),
+        (NOTIFICATION, 'Notification'),
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     doctor_session = models.ForeignKey(DoctorSession, related_name='messages', on_delete=models.CASCADE)
     body = models.TextField()
+    type = models.CharField(max_length=50, choices=MESSAGE_CHOICE, default=TEXT)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, related_name='sentmessages', on_delete=models.CASCADE)
 
@@ -63,3 +73,16 @@ class DoctorSessionMessage(models.Model):
 
 
     
+class Medications(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    doctor_session = models.ForeignKey(DoctorSession,related_name='medications', on_delete=models.CASCADE)
+    name = models.CharField(max_length=120)
+    weight = models.CharField(max_length=10)
+    dosage = models.TextField()
+    created_by = models.ForeignKey(User, related_name='medication_by', on_delete=models.CASCADE)
+    created_for = models.ForeignKey(User, related_name='medications_for', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    def created_at_formatted(self):
+        return timesince(self.created_at)

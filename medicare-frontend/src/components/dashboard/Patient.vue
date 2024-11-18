@@ -42,7 +42,7 @@
             <p>{{userStore.user.emergency_contact }}</p>
           </div>
           <div class="flex flex-col sm:flex-row justify-start space-y-4 sm:space-y-0 sm:space-x-4">
-            <RouterLink :to="{name:'requestappointment'}"
+            <RouterLink :to="{name:'requestappointment'}" v-if="latestAppointment === 'done' || latestAppointment === null "
               class="px-4 py-2 bg-green-500 text-center text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
             >
             <PlusCircle class="inline-block mr-2 h-4 w-4" />
@@ -71,7 +71,7 @@
                     <div class="mt-6 flow-root">
                       <ul class="-my-5 divide-y divide-gray-200">
                         <li v-for="appointment in appointments" :key="appointment.id" class="py-5">
-                          <div v-if="appointment.created_by.id === userStore.user.id" class="flex items-center space-x-4">
+                          <div  class="flex items-center space-x-4">
                             <div class="flex-shrink-0">
                               <Calendar class="h-8 w-8 text-indigo-600" />
                             </div>
@@ -112,7 +112,7 @@
                             </div>
                             <div class="flex-1 min-w-0">
                               <p class="text-sm font-medium text-gray-900 truncate">{{ medication.name }}</p>
-                              <p class="text-sm text-gray-500 truncate">{{ `${medication.dosage} - ${medication.frequency}` }}</p>
+                              <p class="text-sm text-gray-500 truncate">{{ `${medication.weight}mg - ${medication.dosage}` }}</p>
                             </div>
                             <div>
                               <button
@@ -214,8 +214,11 @@ export default {
       userStore,
     };
   },
-  mounted() {
-    this.getAndUpdateAppointments ()
+    mounted() {
+    this.getMedications();
+    this.getAndUpdateAppointments();
+    
+    
   },
   components: {
     User,
@@ -231,9 +234,11 @@ export default {
   },
   data() {
     return {
+      medications: [],
       appointments: [],
       showReminder: null,
       socket: null,
+      latestAppointment: null,
       
       patientDetails: {
         name: 'Sarah Johnson',
@@ -247,7 +252,7 @@ export default {
         { id: 2, date: '2023-10-15', time: '2:30 PM', doctor: 'Dr. Michael Lee', status: 'Completed' },
         { id: 3, date: '2023-09-30', time: '11:15 AM', doctor: 'Dr. Sarah Johnson', status: 'Cancelled' },
       ],
-      medications: [
+      nmedications: [
         { id: 1, name: 'Lisinopril', dosage: '10mg', frequency: 'Once daily', reminder: '8:00 AM' },
         { id: 2, name: 'Metformin', dosage: '500mg', frequency: 'Twice daily', reminder: '9:00 AM, 9:00 PM' },
         { id: 3, name: 'Simvastatin', dosage: '20mg', frequency: 'Once daily', reminder: '9:00 PM' },
@@ -281,9 +286,36 @@ export default {
     },
   },
   methods: {
+    getMedications(){
+      const token = this.userStore.user.access
+        const ws = new WebSocket(`ws://localhost:8000/ws/medications/?token=${token}`);
+      
+        ws.onopen = () => {
+
+            ws.send(
+                JSON.stringify({
+                    action: "list",
+                    request_id: new Date().getTime(),
+                })
+            );
+        };
+        ws.onmessage = (e) => {
+            const allData = JSON.parse(e.data);
+            if (allData.action === 'list'){
+              console.log(allData.data)
+                this.medications = allData.data;
+                
+            }else if ( allData.action === "create" ){
+                this.medications.push(allData.data);
+            }
+        }
+      
+
+    },
 
     getAndUpdateAppointments (){
-        const ws = new WebSocket('ws://localhost:8000/ws/appointments/');
+        const token = this.userStore.user.access
+        const ws = new WebSocket(`ws://localhost:8000/ws/appointments/?token=${token}`);
       
         ws.onopen = () => {
 
@@ -299,6 +331,14 @@ export default {
             if (allData.action === 'list'){
               console.log(allData.data)
                 this.appointments = allData.data;
+                if(this.appointments.length > 0){
+                  this.latestAppointment = allData.data[0].status;
+                }else{
+                  console.log('No appointment available ');
+                  this.latestAppointment = null;
+                }
+                
+                console.log(this.latestAppointment)
             }else if ( allData.action === "create" ){
                 this.appointments.push(allData.data);
             }

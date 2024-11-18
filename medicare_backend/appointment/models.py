@@ -24,7 +24,7 @@ class Appointment(models.Model):
 
 
     class Meta:
-        ordering = ('created_at',)
+        ordering = ('-created_at',)
 
 
     def created_at_formatted(self):

@@ -2,9 +2,9 @@ from rest_framework.decorators import api_view, authentication_classes , permiss
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .serializers import ConsultationSerializer , SessionDetailSerializer, SessionMessageSerializer, SessionSerializer
+from .serializers import ConsultationSerializer , SessionDetailSerializer, SessionSerializer, MedicationsSerializer
 from django.core.exceptions import ObjectDoesNotExist
-from .models import Consultation , DoctorSession, DoctorSessionMessage
+from .models import Consultation , DoctorSession, Medications
 from account.models import User
 from appointment.models import Appointment
 
@@ -50,50 +50,62 @@ def get_sessions(request):
     
 
 @api_view(['POST'])
-def get_or_create_doctor_session(request,id):
+def get_or_create_doctor_session(request, consultation_id, patient_id):
     try:
-        patient = User.objects.get(pk=id)
-        
-    except ObjectDoesNotExist:
-        return Response({"error":"Patient not found"}, status=status.HTTP_404_NOT_FOUND)
-    
+        patient = User.objects.get(pk=patient_id)
+    except User.DoesNotExist:
+        return Response({"error": "Patient not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        consultation = Consultation.objects.get(pk=consultation_id)
+    except Consultation.DoesNotExist:
+        return Response({"error": "Consultation not found"}, status=status.HTTP_404_NOT_FOUND)
+
     doctor_sessions = DoctorSession.objects.filter(users__in=[request.user, patient]).distinct()
-    
+
     if doctor_sessions.exists():
         doctor_session = doctor_sessions.first()
     else:
-        doctor_session = DoctorSession.objects.create()
-        doctor_session.users.add(patient,request.user)
+        doctor_session = DoctorSession.objects.create(consultation=consultation)
+        doctor_session.users.add(patient, request.user)
+
+        consultation.status = Consultation.ACCEPTED
+        consultation.save()
 
     serializer = SessionDetailSerializer(doctor_session)
-
-    return Response(serializer.data)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
-def session_send_message(request,id):
+def add_medications(request, id):
     try:
         doctor_session = DoctorSession.objects.get(pk=id)
-        print(doctor_session.id)
-
-        
-    except ObjectDoesNotExist:
-        return Response({"error":"Session not found"}, status=status.HTTP_404_NOT_FOUND)
+    except DoctorSession.DoesNotExist:
+        return Response({'error':"Doctor session not found "},status=status.HTTP_400_BAD_REQUEST)
     
-    for user in doctor_session.users.all():
-            if user != request.user:
-                sent_to = user
+    medications_data = request.data
+
+    if not isinstance(medications_data,list):
+        return Response({"error":"Invalid data format. Expected. Expected an array of objects"},status=status.HTTP_400_BAD_REQUEST)
+
+    for medications_data in medications_data:
+        name = medications_data.get('medication')
+        weight = medications_data.get('weight')
+        dosage = medications_data.get('dosage')
+
+        if not all([name,weight,dosage]):
+            return Response({"error":"Missing fields in prescription data"}, status=status.HTTP_400_BAD_REQUEST)
+
+        medication = Medications.objects.create(doctor_session=doctor_session,  name=name, weight=weight, dosage= dosage)
+
+    serializer = MedicationsSerializer(medication)
+    return Response({'message':'medication was added to this session'},status=status.HTTP_201_CREATED)
 
 
-    session_message = DoctorSessionMessage.objects.create(
-        doctor_session = doctor_session,
-        body = request.data.get('message'),
-        created_by = request.user,
-        sent_to = sent_to
-    )
 
-    serializer = SessionMessageSerializer(session_message)
-    return Response(serializer.data)
+
+
+
     
 
     

@@ -5,7 +5,7 @@
           <router-link class="flex items-center justify-center" to="#">
             <span class="text-2xl ml-3 font-bold text-gray-900">Medicare</span>
           </router-link>
-          <nav class="hidden md:flex items-center space-x-6 text-sm font-medium">
+          <nav  class="hidden md:flex items-center space-x-6 text-sm font-medium" >
             <router-link v-for="item in navigations" :bind="item.name" :to="item.href" class="text-gray-600 text-lg hover:text-teal-500 transition-colors" to="#features">
               {{item.name}}
             </router-link>

@@ -7,14 +7,14 @@
           <p class="text-sm text-gray-500">Patient</p>
         </div>
       </div>
-      <div class="flex space-x-2">
+      <div v-if="userStore.user.role === 'doctor' " class="flex space-x-2">
         <button class="p-2 rounded-md border border-gray-300 hover:bg-gray-100" aria-label="Start voice call">
           <Phone class="h-4 w-4" />
         </button>
         <button class="p-2 rounded-md border border-gray-300 hover:bg-gray-100" aria-label="Start video call">
           <Video class="h-4 w-4" />
         </button>
-        <button class="p-2 rounded-md border border-gray-300 hover:bg-gray-100" aria-label="Add prescription">
+        <button @click="isModalOpen = true"  class="p-2 rounded-md border border-gray-300 hover:bg-gray-100" aria-label="Add prescription">
           <FileText class="h-4 w-4 mr-2" />
           <span class="hidden sm:inline">Add Prescription</span>
         </button>
@@ -25,13 +25,22 @@
             <div v-for="message in messages" :key="message.id">
         <!-- Check if the message was created by the doctor -->
         <div 
-          v-if="message.created_by.id === doctorId" 
+          v-if="message.created_by.role === 'doctor'" 
           class="flex mb-4 justify-end"
         >
-          <div class="rounded-lg p-3 max-w-[80%] bg-blue-100">
+          <div v-if="message.type === 'text'" class="rounded-lg p-3 max-w-[80%] bg-blue-100">
             <p class="text-sm">{{ message.body }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ message.created_at_formatted }}</p>
           </div>
+          <div v-else class="w-full bg-yellow-100 py-2">
+            <div class="flex justify-center items-center max-w-4xl mx-auto">
+              <div class="text-yellow-700 px-4">
+                <bell-icon class="inline-block mr-2 h-4 w-4" />
+                {{ message.body }}
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- Check if the message was created by someone other than the doctor -->
@@ -46,10 +55,8 @@
         </div>
       </div>
 
+
     </div>
-
-    <div class="border-t border-gray-200"></div>
-
     <form @submit.prevent="sendMessage" class="p-4 bg-white">
       <div class="flex space-x-2">
         <input
@@ -64,12 +71,48 @@
         </button>
       </div>
     </form>
+
+    <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 class="text-2xl font-bold mb-4">Add Prescription</h2>
+        <div class="mb-4">
+          <p>Patient: {{ patientName }}</p>
+          <p>Doctor: {{ doctorName }}</p>
+        </div>
+        <div class="h-[300px] overflow-y-auto pr-4 space-y-4">
+          <div v-for="(prescription, index) in prescriptions" :key="index" class="space-y-2">
+            <input v-model="prescription.medication" placeholder="Medication name"
+                   class="w-full px-4 py-2 border rounded-md" />
+            <input v-model="prescription.weight" placeholder="Weight"
+                   class="w-full px-4 py-2 border rounded-md" />
+            <textarea v-model="prescription.dosage" placeholder="Dosage and notes"
+                      class="w-full px-4 py-2 border rounded-md"></textarea>
+          </div>
+        </div>
+        <button @click="addPrescription" class="mt-4 px-4 py-2 border rounded-md hover:bg-gray-100">
+          <plus-icon class="inline-block mr-2 h-4 w-4" /> Add Another Prescription
+        </button>
+        <div class="flex justify-between mt-4">
+          <button @click="isModalOpen = false" class="px-4 py-2 border rounded-md hover:bg-gray-100">
+            Cancel
+          </button>
+          <button @click="sendPrescriptions" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+            <send-icon class="inline-block mr-2 h-4 w-4" /> Send Prescriptions
+          </button>
+        </div>
+      </div>
+    </div>
+
+    
   </div>
+  
+  
 </template>
 
 <script>
-import { Phone, Video, FileText, Send } from 'lucide-vue-next'
+import { Phone, Video, FileText, Send ,  PlusIcon,SendIcon,BellIcon} from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user';
+import axios from 'axios';
 
 
 
@@ -79,7 +122,11 @@ export default {
     Phone,
     Video,
     FileText,
-    Send
+    Send,
+    PlusIcon,
+    SendIcon,
+    BellIcon
+    
   },
   setup() {
     const userStore = useUserStore();
@@ -92,8 +139,9 @@ export default {
     return {
       chatSocket: null,
       messages : [],
-      doctorId: null,
-      newMessage: ''
+      newMessage: '',
+      isModalOpen: false,
+      prescriptions: [{ medication: '', weight: '', dosage: '' }],
     }
   },
   mounted() {
@@ -106,10 +154,34 @@ export default {
         }
     },
   methods: {
+    async sendPrescriptions(){
+        const sessionId = this.$route.params.id
+        try{
+          const response = await axios.post(`/api/consultation/sessions/medications/${sessionId}/`,this.prescriptions)
+          if(response.status === 201){
+            this.newMessage = response.data.message
+            this.sendNotificationMessage()
+
+            this.isModalOpen = false
+
+            
+          }
+
+        }catch(error){
+          if (error.response && error.response.data && error.response.data.error){
+            const errorMessage = error.response.data.error
+            this.toastStore.showToast(5000, errorMessage, 'bg-red-500')
+          }
+
+        }
+        
+    },
+
     initializeWebSocket() {
         const token = this.userStore.user.access;
         console.log(token)
         const sessionId = this.$route.params.id;
+        console.log('s',sessionId)
         this.chatSocket = new WebSocket(`ws://127.0.0.1:8000/ws/session-chat/?token=${token}`);
         this.chatSocket.onopen = () => {
           const requestId = new Date().getTime();
@@ -130,13 +202,6 @@ export default {
           console.log(data.data.messages)
           //this.roomData = data.data;
           this.messages = data.data.messages;
-          const users = data.data.users
-          for ( const user of users){
-            if(user === this.userStore.user.id){
-              this.doctorId = user
-            }
-          }
-          console.log(this.doctorId)
           
           break;
         case "create":
@@ -157,6 +222,19 @@ export default {
     console.error("Chat socket closed unexpectedly. Attempting to reconnect...");
     setTimeout(this.initializeWebSocket, 1000); // Attempt reconnection after 1 second
   },
+  sendNotificationMessage() {
+      if (this.newMessage.trim() === '') return;
+      console.log(this.newMessage)
+      const message = this.newMessage.trim();
+      const requestId = new Date().getTime();
+      this.chatSocket.send(JSON.stringify({
+        message: message,
+        action: "create_text_notification",
+        request_id: requestId 
+      }));
+      this.newMessage = '';
+      
+  },
   sendMessage() {
     if (this.newMessage.trim() === '') return;
     console.log(this.newMessage)
@@ -168,6 +246,9 @@ export default {
       request_id: requestId 
     }));
     this.newMessage = '';
+  },
+  addPrescription(){
+      this.prescriptions.push({medication:'', weight: '', dosage:''})
   },
 
     scrollToBottom() {

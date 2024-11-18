@@ -244,7 +244,7 @@
                       Patient: {{ selectedAppointment ? `${selectedAppointment.created_by.first_name} ${selectedAppointment.created_by.last_name}` : '' }}
                     </p>
                     <p class="text-sm text-gray-500">
-                      Date: {{ selectedAppointment ? selectedAppointment.created_at_formatted : '' }}
+                      created: {{ selectedAppointment ? selectedAppointment.created_at_formatted : '' }}
                     </p>
                   </div>
                   <div  class="mt-4">
@@ -367,7 +367,8 @@
                 };
             },
     getAppointments() {
-        const ws = new WebSocket('ws://localhost:8000/ws/appointments/')
+        const token = this.userStore.user.access
+        const ws = new WebSocket(`ws://localhost:8000/ws/appointments/?token=${token}`);
   
         ws.onopen = () => {
           console.log('WebSocket connection established');
@@ -382,6 +383,7 @@
           const allData = JSON.parse(e.data)
           if (allData.action === 'list') {
             const appointments = allData.data
+            console.log(appointments)
             if(Array.isArray(appointments)){
                 this.appointmentList = appointments.filter(appointment => appointment.status === 'sent')
             }else {

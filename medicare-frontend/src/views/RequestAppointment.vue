@@ -79,13 +79,16 @@
    
   <script>
   import { useUserStore } from '@/stores/user';
+  import { useToastStore } from '@/stores/toast';
   import axios from 'axios';
   export default {
     setup(){
         const userStore = useUserStore()
+        const toastStore = useToastStore()
 
         return{
-            userStore
+            userStore,
+            toastStore
         }
     },
     data() {
@@ -121,14 +124,24 @@
         try {
 
             const response = await axios.post('/api/request/appointment/',payload)
+            this.success = true;
+            this.reason = ''; 
+            this.selectedDoctor = '';
+
 
 
         }catch(error){
-            console.log(this.error)
+          if(error.response && error.response.data && error.response.data.error){
+            this.error = this.error.response.data.error
+            this.toastStore.showToast(5000, this.error, 'bg-red-500')
+          }else{
+            this.error = 'An unexpected error occured, please try again'
+            this.toastStore.showToast(5000, this.error, 'bg-red-500')
+          }
+            
         }
 
-        this.success = true;
-        this.reason = '';  
+         
         },
         getDoctors(){
             const ws = new WebSocket('ws://localhost:8000/ws/users/')
@@ -147,12 +160,8 @@
                 const response = JSON.parse(e.data);
                 if (response.action === 'list') {
                     let users = response.data;
-                    this.doctors = []; 
-                    for (const user of users) { 
-                        if (user.role === 'doctor') {
-                            this.doctors.push(user); 
-                            }
-                        }
+                    this.doctors = users
+                    
                         console.log(this.doctors);
                     }
                 };

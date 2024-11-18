@@ -69,7 +69,7 @@ const router = createRouter({
     {
       path:'/session/:id',
       name: 'startsession',
-      component: Session
+      component: Session,
     },
   ]
 })

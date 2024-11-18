@@ -14,6 +14,7 @@ urlpatterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  
     path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('update/<uuid:id>/', apis.update_profile, name='update_profile'),
+    path('account/medications/<uuid:id>/', apis.get_medications, name='get_medications'),
     
     # Djoser URLs
     path('auth/', include('djoser.urls')),
