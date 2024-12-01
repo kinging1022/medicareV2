@@ -1,5 +1,6 @@
 <template>
   <div class="flex flex-col h-screen bg-gray-100">
+    <!-- Header Section -->
     <div class="flex items-center justify-between px-4 py-3 bg-white shadow-md">
       <div class="flex items-center">
         <div class="ml-3">
@@ -7,30 +8,39 @@
           <p class="text-sm text-gray-500">Patient</p>
         </div>
       </div>
-      <div v-if="userStore.user.role === 'doctor' " class="flex space-x-2">
+      <div v-if="userStore.user.role === 'doctor'" class="flex space-x-2">
         <button class="p-2 rounded-md border border-gray-300 hover:bg-gray-100" aria-label="Start voice call">
           <Phone class="h-4 w-4" />
         </button>
         <button class="p-2 rounded-md border border-gray-300 hover:bg-gray-100" aria-label="Start video call">
           <Video class="h-4 w-4" />
         </button>
-        <button @click="isModalOpen = true"  class="p-2 rounded-md border border-gray-300 hover:bg-gray-100" aria-label="Add prescription">
+        <button
+          @click="isModalOpen = true"
+          class="p-2 rounded-md border border-gray-300 hover:bg-gray-100"
+          aria-label="Add prescription"
+        >
           <FileText class="h-4 w-4 mr-2" />
           <span class="hidden sm:inline">Add Prescription</span>
+        </button>
+        <button
+          @click="endSession"
+          class="p-2 rounded-md border border-gray-300 hover:bg-gray-100"
+          aria-label="End session"
+        >
+          <X class="h-4 w-4"  color="red"/>
         </button>
       </div>
     </div>
 
+    <!-- Chat Section -->
     <div class="flex-grow p-4 overflow-auto" ref="scrollArea">
-            <div v-for="message in messages" :key="message.id">
-        <!-- Check if the message was created by the doctor -->
-        <div 
-          v-if="message.created_by.role === 'doctor'" 
-          class="flex mb-4 justify-end"
-        >
+      <div v-for="message in messages" :key="message.id">
+        <!-- Doctor's Message -->
+        <div v-if="message.created_by.role === 'doctor'" class="flex mb-4 justify-end">
           <div v-if="message.type === 'text'" class="rounded-lg p-3 max-w-[80%] bg-blue-100">
             <p class="text-sm">{{ message.body }}</p>
-            <p class="text-xs text-gray-500 mt-1">{{ message.created_at_formatted }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ formatTimestamp(message.created_at_formatted) }}</p>
           </div>
           <div v-else class="w-full bg-yellow-100 py-2">
             <div class="flex justify-center items-center max-w-4xl mx-auto">
@@ -40,24 +50,20 @@
               </div>
             </div>
           </div>
-
         </div>
 
-        <!-- Check if the message was created by someone other than the doctor -->
-        <div 
-          v-else 
-          class="flex mb-4 justify-start"
-        >
+        <!-- Other User's Message -->
+        <div v-else class="flex mb-4 justify-start">
           <div class="rounded-lg p-3 max-w-[80%] bg-white">
             <p class="text-sm">{{ message.body }}</p>
-            <p class="text-xs text-gray-500 mt-1">{{ message.created_at_formatted }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ formatTimestamp(message.created_at_formatted) }}</p>
           </div>
         </div>
       </div>
-
-
     </div>
-    <form @submit.prevent="sendMessage" class="p-4 bg-white">
+
+    <!-- Message Input Section -->
+    <form v-if="isMessageInputVisible" @submit.prevent="sendMessage" class="p-4 bg-white">
       <div class="flex space-x-2">
         <input
           v-model="newMessage"
@@ -72,6 +78,7 @@
       </div>
     </form>
 
+    <!-- Prescription Modal -->
     <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div class="bg-white rounded-lg p-6 w-full max-w-md">
         <h2 class="text-2xl font-bold mb-4">Add Prescription</h2>
@@ -81,12 +88,21 @@
         </div>
         <div class="h-[300px] overflow-y-auto pr-4 space-y-4">
           <div v-for="(prescription, index) in prescriptions" :key="index" class="space-y-2">
-            <input v-model="prescription.medication" placeholder="Medication name"
-                   class="w-full px-4 py-2 border rounded-md" />
-            <input v-model="prescription.weight" placeholder="Weight"
-                   class="w-full px-4 py-2 border rounded-md" />
-            <textarea v-model="prescription.dosage" placeholder="Dosage and notes"
-                      class="w-full px-4 py-2 border rounded-md"></textarea>
+            <input
+              v-model="prescription.medication"
+              placeholder="Medication name"
+              class="w-full px-4 py-2 border rounded-md"
+            />
+            <input
+              v-model="prescription.weight"
+              placeholder="Weight"
+              class="w-full px-4 py-2 border rounded-md"
+            />
+            <textarea
+              v-model="prescription.dosage"
+              placeholder="Dosage and notes"
+              class="w-full px-4 py-2 border rounded-md"
+            ></textarea>
           </div>
         </div>
         <button @click="addPrescription" class="mt-4 px-4 py-2 border rounded-md hover:bg-gray-100">
@@ -102,18 +118,14 @@
         </div>
       </div>
     </div>
-
-    
   </div>
-  
-  
 </template>
 
+
 <script>
-import { Phone, Video, FileText, Send ,  PlusIcon,SendIcon,BellIcon} from 'lucide-vue-next'
+import { Phone, Video, FileText, Send, PlusIcon, SendIcon, BellIcon, X } from 'lucide-vue-next';
 import { useUserStore } from '@/stores/user';
 import axios from 'axios';
-
 
 
 export default {
@@ -125,145 +137,218 @@ export default {
     Send,
     PlusIcon,
     SendIcon,
-    BellIcon
-    
+    BellIcon,
+    X,
   },
   setup() {
     const userStore = useUserStore();
-
     return {
       userStore,
     };
   },
   data() {
     return {
-      chatSocket: null,
-      messages : [],
+      messages: [],
       newMessage: '',
       isModalOpen: false,
       prescriptions: [{ medication: '', weight: '', dosage: '' }],
-    }
-  },
-  mounted() {
-      this.initializeWebSocket();
-      this.scrollToBottom();
-    },
-    beforeDestroy() {
-        if (this.chatSocket) {
-          this.chatSocket.close();
-        }
-    },
-  methods: {
-    async sendPrescriptions(){
-        const sessionId = this.$route.params.id
-        try{
-          const response = await axios.post(`/api/consultation/sessions/medications/${sessionId}/`,this.prescriptions)
-          if(response.status === 201){
-            this.newMessage = response.data.message
-            this.sendNotificationMessage()
-
-            this.isModalOpen = false
-
-            
-          }
-
-        }catch(error){
-          if (error.response && error.response.data && error.response.data.error){
-            const errorMessage = error.response.data.error
-            this.toastStore.showToast(5000, errorMessage, 'bg-red-500')
-          }
-
-        }
-        
-    },
-
-    initializeWebSocket() {
-        const token = this.userStore.user.access;
-        console.log(token)
-        const sessionId = this.$route.params.id;
-        console.log('s',sessionId)
-        this.chatSocket = new WebSocket(`ws://127.0.0.1:8000/ws/session-chat/?token=${token}`);
-        this.chatSocket.onopen = () => {
-          const requestId = new Date().getTime();
-          this.chatSocket.send(JSON.stringify({ pk: sessionId, action: "join_room", request_id: requestId }));
-          this.chatSocket.send(JSON.stringify({ pk: sessionId, action: "retrieve", request_id: requestId }));
-          this.chatSocket.send(JSON.stringify({ pk: sessionId, action: "subscribe_to_messages_in_room", request_id: requestId }));
-          this.chatSocket.send(JSON.stringify({ pk: sessionId, action: "subscribe_instance", request_id: requestId }));
-        };
-        this.chatSocket.onmessage = this.handleSocketMessage;
-        this.chatSocket.onclose = this.handleSocketClose;
-  },
-  handleSocketMessage(e) {
-    const data = JSON.parse(e.data);
-      console.log('message data',data.data)
-      switch (data.action) {
-        case "retrieve":
-          console.log(data.data)
-          console.log(data.data.messages)
-          //this.roomData = data.data;
-          this.messages = data.data.messages;
-          
-          break;
-        case "create":
-        console.log(data.data)
-        const newMessage = data.data
-        if(newMessage && newMessage.created_by && newMessage.created_by.id){
-          this.messages.push(newMessage)
-          this.$nextTick(this.scrollToBottom);
-        }else{
-          console.warn("New message structure is missing required fields:", newMessage);
-        }
-          
-  
-          break;
-      }
-  },
-  handleSocketClose(e) {
-    console.error("Chat socket closed unexpectedly. Attempting to reconnect...");
-    setTimeout(this.initializeWebSocket, 1000); // Attempt reconnection after 1 second
-  },
-  sendNotificationMessage() {
-      if (this.newMessage.trim() === '') return;
-      console.log(this.newMessage)
-      const message = this.newMessage.trim();
-      const requestId = new Date().getTime();
-      this.chatSocket.send(JSON.stringify({
-        message: message,
-        action: "create_text_notification",
-        request_id: requestId 
-      }));
-      this.newMessage = '';
+      sessionId: this.$route.params.id,
+      activeSessionSocket: null,
+      isProcessing: false,
       
+    };
   },
-  sendMessage() {
-    if (this.newMessage.trim() === '') return;
-    console.log(this.newMessage)
-    const message = this.newMessage.trim();
-    const requestId = new Date().getTime();
-    this.chatSocket.send(JSON.stringify({
-      message: message,
-      action: "create_message",
-      request_id: requestId 
-    }));
-    this.newMessage = '';
+  computed: {
+  isMessageInputVisible() {
+    const status = this.userStore.activeSessionStatus || "inactive";
+    const notification = this.userStore.notificationType || "none";
+    return status === "started" && notification !== "session_stop" && !this.isProcessing;
   },
-  addPrescription(){
-      this.prescriptions.push({medication:'', weight: '', dosage:''})
-  },
+},
 
+  mounted() {
+    this.scrollToBottom();
+    this.getMessages();
+    this.timestampInterval = setInterval(() => {
+    this.$forceUpdate(); // Trigger re-render
+  }, 60000);
+  },
+  beforeDestroy() {
+    if (this.activeSessionSocket) {
+      this.activeSessionSocket.close();
+    };
+    
+    if (this.timestampInterval) {
+    clearInterval(this.timestampInterval);
+  }
+
+  },
+  methods: {
+    formatTimestamp(timestamp) {
+      
+      const createdAt = new Date(timestamp);
+      if (isNaN(createdAt.getTime())) {
+        console.error("Invalid timestamp:", timestamp);
+        return "Invalid date";
+      }
+
+      const now = new Date();
+      const diffInMinutes = Math.floor((now - createdAt) / (1000 * 60)); 
+
+      if (diffInMinutes < 1) return "Just now";
+      if (diffInMinutes === 1) return "1 minute ago";
+      if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
+
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours === 1) return "1 hour ago";
+      if (diffInHours < 24) return `${diffInHours} hours ago`;
+
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays === 1) return "1 day ago";
+      if (diffInDays < 7) {
+        return `${createdAt.toLocaleDateString(undefined, { weekday: "long" })}, ${createdAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+      }
+
+      return createdAt.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+    },
+
+    getMessages() {
+      const ws = new WebSocket(`ws://localhost:8000/ws/session-chat/?token=${this.userStore.user.access}`);
+      this.activeSessionSocket = ws;
+
+      ws.onopen = () => {
+        ws.send(
+          JSON.stringify({
+            action: "list",
+            request_id: new Date().getTime(),
+          })
+        );
+      };
+
+      ws.onmessage = (e) => {
+        try {
+          const response = JSON.parse(e.data);
+          console.log('WebSocket response:', response);
+
+          if (!response.action) return;
+
+          if (response.action === "list") {
+            const data = response.data;
+            console.log(data)
+            if (Array.isArray(data) && data.length > 0) {
+              this.messages = data[0].messages; 
+              console.log(this.messages)
+            } else {
+              console.error("No data or messages found.");
+            }
+          } else if (response.action === 'create') {
+            const newMessage = response.data;
+            this.messages.push(newMessage); 
+            console.log('New message added:', newMessage);
+          }
+        } catch (error) {
+          console.error("Error parsing WebSocket message:", error);
+        }
+      };
+
+      ws.onclose = (e) => {
+        console.warn("WebSocket closed:", e.reason || "No reason provided");
+        this.activeSessionSocket = null;
+        
+      };
+
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+    },
+
+    async endSession() {
+      try {
+        this.isProcessing = true;
+        const response = await axios.post(`/api/consultation/sessions/end/${this.sessionId}/`);
+        if (response.status === 200) {
+          this.newMessage = response.data.message;
+          this.sendNotificationMessage()
+          this.userStore.getActiveSession()
+        }
+      } catch (error) {
+        console.error("Error ending session:", error);
+        if (error.response?.data?.error) {
+          console.log(error.response.data.error);
+        }
+      }finally {
+        this.isProcessing = false;
+        if(this.isMessageInputVisible){
+          this.$router.push('/dashboard')
+        }
+      }
+    },
+
+    async sendPrescriptions() {
+      try {
+        const response = await axios.post(`/api/consultation/sessions/medications/${this.sessionId}/`, this.prescriptions);
+        if (response.status === 201) {
+          this.newMessage = response.data.message;
+          this.sendNotificationMessage()
+          this.isModalOpen = false;
+        }
+      } catch (error) {
+        if (error.response && error.response.data && error.response.data.error) {
+          const errorMessage = error.response.data.error;
+          this.toastStore.showToast(5000, errorMessage, 'bg-red-500');
+        }
+      }
+    },
+
+    async sendNotificationMessage() {
+      if (this.newMessage.trim() === '') return;
+      console.log(this.newMessage);
+      const message = this.newMessage.trim();
+      try {
+        const response = await axios.post(`/api/consultation/session/message/${this.sessionId}/`, {
+          body: message,
+          type: 'notification'
+        });
+      } catch (error) {
+        console.error("Error sending message:", error);
+      }
+      this.newMessage = '';
+    },
+
+
+    async sendMessage() {
+      if (this.newMessage.trim() === '') return;
+      console.log(this.newMessage);
+      const message = this.newMessage.trim();
+      try {
+        const response = await axios.post(`/api/consultation/session/message/${this.sessionId}/`, {
+          body: message,
+          type: 'text'
+        });
+      } catch (error) {
+        console.error("Error sending message:", error);
+      }
+      this.newMessage = '';
+    },
+
+    addPrescription() {
+      this.prescriptions.push({ medication: '', weight: '', dosage: '' });
+    },
     scrollToBottom() {
       if (this.$refs.scrollArea) {
-        this.$refs.scrollArea.scrollTop = this.$refs.scrollArea.scrollHeight
+        this.$refs.scrollArea.scrollTop = this.$refs.scrollArea.scrollHeight;
       }
-    }
+    },
   },
 
   updated() {
-    this.scrollToBottom()
-  }
-}
+    this.scrollToBottom();
+  },
+};
 </script>
 
 <style scoped>
 /* Add any additional styles here if needed */
 </style>
+
+   

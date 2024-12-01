@@ -7,38 +7,7 @@
   
       <div class="space-y-6">
         <!-- Personal Information Section -->
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-2xl font-semibold mb-4">Personal Information</h2>
-          <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
-            <div class="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center text-2xl font-bold">
-              {{ initials }}
-            </div>
-            <div class="text-center sm:text-left">
-              <h3 class="text-xl font-semibold">{{userStore.user.first_name}} {{userStore.user.last_name}}</h3>
-              <p class="text-gray-600">
-                {{ userStore.user.age }} years old • {{ userStore.user.gender }}
-              </p>
-            </div>
-          </div>
-          <div class="flex flex-col sm:flex-row justify-start space-y-4 sm:space-y-0 sm:space-x-4">
-            <button
-              @click="handleRequestAppointment"
-              class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
-            >
-              <PlusCircle class="inline-block mr-2 h-4 w-4" />
-              Request Appointment
-            </button>
-            <RouterLink :to="{name:'updatepassword'}" class="px-4 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center focus:ring-opacity-50">
-              <KeyRound class="inline-block mr-2 h-4 w-4" />
-              Edit Password
-            </RouterLink>
-            <button @click="logOut()" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
-              <LogOut class="inline-block mr-2 h-4 w-4" />
-              Logout
-            </button>
-          </div>
-        </div>
-  
+        <DahboardProfile/>
         <!-- Dashboard Section -->
         <div class="py-10">
           <header>
@@ -274,10 +243,10 @@
   
   <script>
   import axios from 'axios';
-  import { LogOut, Bell, Calendar, CheckCircle, Clock, Users, Video, XCircle, Download, KeyRound, FileText, User, Syringe, Activity, Pill, DollarSign, Menu, PlusCircle, ChevronDown, ChevronUp, KeyRoundIcon } from 'lucide-vue-next';
+  import { LogOut, Bell, Calendar, CheckCircle, Clock, Users, Video, XCircle,  KeyRound,  User,  PlusCircle,  } from 'lucide-vue-next';
   
   import { useUserStore } from '@/stores/user';
-  
+  import DahboardProfile from './DahboardProfile.vue';
   export default {
     name: "Admin",
     setup() {
@@ -292,6 +261,7 @@
       this.getDoctors()
     },
     components: {
+      DahboardProfile,
       User,
       LogOut,
       PlusCircle,
@@ -335,10 +305,6 @@
       },
     },
     methods: {
-      logOut() {
-        this.userStore.removeToken();
-        this.$router.push('/login');
-      },
       getDoctors(){
             const ws = new WebSocket('ws://localhost:8000/ws/users/')
 
@@ -417,16 +383,9 @@
                 const newResponse = await axios.post(`/api/consultation/create/${appointmentID}/`)
                 console.log(newResponse.data)
 
-
-
             }catch(error){
                  console.log(error)
             }
-                
-
-            
-
-          
           
           // Remove the appointment from the list
           this.appointmentList = this.appointmentList.filter(app => app.id !== this.selectedAppointment.id);
@@ -437,7 +396,6 @@
         }
       },
       handleRejectAppointment(appointmentId) {
-        // In a real app, you would make an API call here
         this.appointments = this.appointments.filter(app => app.id !== appointmentId);
         console.log(`Rejected appointment ${appointmentId}`);
       }

@@ -36,5 +36,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         read_only_fields = (
             'display_age',
+            'unread_notification_count',
         )
-        fields = ('id','email','first_name','dob','last_name', 'display_age' , 'gender','role','height','weight','allergies','blood_type','emergency_contact')
+        fields = ('id','email','first_name','dob','last_name', 'display_age' , 'gender','role','height',
+                  'weight','allergies','blood_type','emergency_contact','unread_notification_count')

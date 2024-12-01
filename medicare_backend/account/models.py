@@ -71,6 +71,15 @@ class User(AbstractBaseUser, PermissionsMixin):
             age = today.year - self.dob.year - ((today.month, today.day) < (self.dob.month,self.dob.day))
             return age
         return None
+    
+    def unread_notification_count(self):
+        total_notifications = self.received_notifications.count()
+        read_notification = self.received_notifications.filter(is_read=True).count()
+
+        return total_notifications - read_notification
+
+
+
 
 
 

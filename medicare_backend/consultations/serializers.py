@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Consultation , DoctorSession, DoctorSessionMessage, Medications
 from account.serializers import UserSerializer
 from appointment.serializers import AppointmentSerializer
+import uuid
 
 
 
@@ -31,6 +32,11 @@ class SessionMessageSerializer(serializers.ModelSerializer):
         model = DoctorSessionMessage
         fields = ('id','created_by', 'created_at_formatted','body','type')
 
+      
+
+    
+
+
 
 class SessionDetailSerializer(serializers.ModelSerializer):
     messages = SessionMessageSerializer(read_only=True, many=True)
@@ -39,6 +45,8 @@ class SessionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = DoctorSession
         fields = ('id', 'users', 'status', 'modified_at_formatted', 'messages','consultation')
+
+        
         
 
    

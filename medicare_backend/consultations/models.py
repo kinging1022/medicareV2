@@ -4,6 +4,8 @@ from django.utils.timesince import timesince
 from account.models import User
 from appointment.models import Appointment
 from account.models import User
+from django.utils.dateformat import format
+from django.utils.timezone import localtime
 
 
 # Create your models here.
@@ -67,8 +69,8 @@ class DoctorSessionMessage(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, related_name='sentmessages', on_delete=models.CASCADE)
 
-    def created_at_formatted(self):
-        return timesince(self.created_at)
+    def created_at_formatted(instance):
+        return format(localtime(instance.created_at), 'Y-m-d\TH:i:s\Z')
 
 
 

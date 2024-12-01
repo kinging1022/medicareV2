@@ -68,3 +68,6 @@ class MedicationConsumer(ListModelMixin,GenericAsyncAPIConsumer):
     def model_serializer(self, instance, action, **kwargs):
         return dict(data=MedicationsSerializer(instance=instance).data, action=action.value)
 
+
+
+

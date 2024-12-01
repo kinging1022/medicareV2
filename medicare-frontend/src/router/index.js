@@ -9,6 +9,7 @@ import UpdateProfileView from '@/views/UpdateProfileView.vue'
 import UpdatePasswordView from '@/views/UpdatePasswordView.vue'
 import RequestAppointment from '@/views/RequestAppointment.vue'
 import Session from '@/views/Session.vue'
+import NotificationView from '@/views/NotificationView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -70,6 +71,11 @@ const router = createRouter({
       path:'/session/:id',
       name: 'startsession',
       component: Session,
+    },
+    {
+      path:'/notification',
+      name: 'notification',
+      component: NotificationView,
     },
   ]
 })
