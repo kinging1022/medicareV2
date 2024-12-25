@@ -46,4 +46,7 @@ medicare_backend/.env
 *.tsbuildinfo
 
 # General
-.DS_Store
+.DS_Storemyenv/
+*.pyc
+myenv/
+*.pyc
