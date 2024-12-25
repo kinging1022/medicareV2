@@ -19,18 +19,28 @@ medicare-frontend/cypress/videos/
 medicare-frontend/cypress/screenshots/
 
 # Backend specific
-medicare_backend/**/__pycache__/
-medicare_backend/**/*.pyc
+# Python cache files
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.Python
+*.py[cod]
+*$py.class
+
 medicare_backend/media/
 medicare_backend/db.sqlite3
 medicare_backend/celerybeat-schedule.db
 
 # Virtual environment
 medicare_backend/myenv/
-
+myenv/
+venv/
+ENV/
 
 # Environment variables
 medicare_backend/.env
+.env
 
 # Editor directories and files
 .vscode/*
@@ -45,4 +55,5 @@ medicare_backend/.env
 # TypeScript
 *.tsbuildinfo
 
-
+# General
+.DS_Store
