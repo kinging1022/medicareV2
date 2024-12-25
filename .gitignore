@@ -7,15 +7,30 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-.DS_Store
-dist
-dist-ssr
-coverage
-*.local
+# Frontend specific
+medicare-frontend/node_modules
+medicare-frontend/.DS_Store
+medicare-frontend/dist
+medicare-frontend/dist-ssr
+medicare-frontend/coverage
+medicare-frontend/*.local
 
-/cypress/videos/
-/cypress/screenshots/
+medicare-frontend/cypress/videos/
+medicare-frontend/cypress/screenshots/
+
+# Backend specific
+medicare_backend/**/__pycache__/
+medicare_backend/**/*.pyc
+medicare_backend/media/
+medicare_backend/db.sqlite3
+medicare_backend/celerybeat-schedule.db
+
+# Virtual environment
+medicare_backend/myenv/
+myenv/
+
+# Environment variables
+medicare_backend/.env
 
 # Editor directories and files
 .vscode/*
@@ -27,15 +42,8 @@ coverage
 *.sln
 *.sw?
 
+# TypeScript
 *.tsbuildinfo
 
-#virtual enviroment
-myenv
-
-
-# Ignore compiled Python files
-*.pyc
-__pycache__/
-
-# Ignore media directory
-media/
+# General
+.DS_Store

@@ -41,7 +41,7 @@
               <!-- Conditional Button -->
               <div class="flex items-center">
                 <button
-                  v-if="notification.type_of_notification === 'session_start' "
+                  v-if="notification.type_of_notification === 'session_start' && !notification.is_read"
                   @click="joinSession(notification.id)"
                   class="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 w-full sm:w-auto"
                 >
@@ -95,11 +95,11 @@ import axios from 'axios';
       async joinSession(id) {
           try {
             await this.userStore.getActiveSession();
-            const activeSession = this.userStore.activeSession[0];
+            const activeSession = this.userStore.activeSession;
 
             if (activeSession) {
-              this.$router.push(`/session/${activeSession.id}`);
               this.markAsRead(id)
+              this.$router.push(`/session/${activeSession.id}`);
             } else {
               console.warn("No active session available.");
             }

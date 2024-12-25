@@ -1,4 +1,6 @@
 from rest_framework.decorators import api_view, authentication_classes , permission_classes
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.decorators import api_view, parser_classes
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
@@ -11,6 +13,10 @@ from account.models import User
 from appointment.models import Appointment
 from notification.utils import create_notification
 from notification.models import Notification
+from payments.models import UserCredit, CreditTransaction, CreditPrice
+
+
+
 from django.db import transaction, IntegrityError
 
 
@@ -40,9 +46,7 @@ def create_consultation(request, id):
 
     appointment = Appointment.objects.select_for_update().get(id=appointment.id)
     appointment.status = Appointment.PROCESSED
-    print("Before save: status =", appointment.status)
     appointment.save()
-    print("After save: status =", appointment.status)
     create_notification(admin, patient, Notification.CONSULTATION)
 
     serializer = ConsultationSerializer(consultation)
@@ -93,34 +97,85 @@ def get_or_create_doctor_session(request, consultation_id, patient_id):
 
 @api_view(['GET'])
 def get_active_session(request):
-    
-    sessions = DoctorSession.objects.filter(users=request.user,status=DoctorSession.STARTED)
+    try:
+        session = DoctorSession.objects.get(users=request.user,status=DoctorSession.STARTED)
 
+    except DoctorSession.DoesNotExist:
+        return Response({'message':'No active session'}, status=status.HTTP_204_NO_CONTENT)
+
+
+    serializer = SessionDetailSerializer(session)
+
+    return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+
+@api_view(['GET'])
+def view_session(request,id):
+    try:
+        doctor_session = DoctorSession.objects.get(pk=id)
+
+    except DoctorSession.DoesNotExist:
+        return Response({'error':'session not found'},status=status.HTTP_400_BAD_REQUEST)
+    
+    serializer = SessionDetailSerializer(doctor_session)
+
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+
+@api_view(['GET'])
+def session_history(request):
+    sessions = DoctorSession.objects.filter(users=request.user, status=DoctorSession.ENDED)
 
     serializer = SessionDetailSerializer(sessions, many=True)
 
     return Response(serializer.data,status=status.HTTP_200_OK)
-   
 
+   
 @api_view(["POST"])
-def send_message(request, id):  
+def send_message(request, id):
     try:
         session = DoctorSession.objects.get(pk=id)
-
     except DoctorSession.DoesNotExist:
-        return Response({"error": "session not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
     
+    image = None
+    video = None
+    message_type = 'text' 
+
+    file = request.FILES.get('file')
+    if file and file.size > 0:
+        mime_type = file.content_type
+        if mime_type.startswith('image/'):
+            message_type = 'image'
+            image = file
+        elif mime_type.startswith('video/'):
+            message_type = 'video'
+            video = file
+        else:
+            return Response({'error': 'Unsupported file type'}, status=status.HTTP_400_BAD_REQUEST)
+
+    else:
+        message_type = request.data.get('type')
+        if not message_type or message_type not in ['text', 'notification']:
+            return Response({"error": "Invalid or missing message type"}, status=status.HTTP_400_BAD_REQUEST)
+
     message = DoctorSessionMessage.objects.create(
-        doctor_session = session,
-        body = request.data.get('body'),
-        created_by = request.user,
-        type = request.data.get('type')
+        doctor_session=session,
+        body=request.data.get('body', ''),
+        created_by=request.user,
+        type=message_type,
+        image=image,
+        video=video
     )
+    
     serializer = SessionMessageSerializer(message)
     return Response(serializer.data)
+
    
     
-
 
 
 @api_view(['POST'])
@@ -130,30 +185,44 @@ def end_session(request, id):
     except DoctorSession.DoesNotExist:
         return Response({'error': "Doctor session not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    
     patient = doctor_session.users.exclude(pk=request.user.id).filter(role='patient').first()
     
     if not patient:
         return Response({'error': 'Unable to identify patient'}, status=status.HTTP_400_BAD_REQUEST)
 
+    try:
+        user_credit = UserCredit.objects.get(user=patient)
+    except UserCredit.DoesNotExist:
+        return Response({'error': 'User credit not found'}, status=status.HTTP_400_BAD_REQUEST)
+
     with transaction.atomic():
-        doctor_session.status = DoctorSession.ENDED 
+        doctor_session.status = DoctorSession.ENDED
         doctor_session.save()
 
         try:
-            appointment = Appointment.objects.get(created_by = patient , status=Appointment.PROCESSED)
+            appointment = Appointment.objects.get(created_by=patient, status=Appointment.PROCESSED)
         except Appointment.DoesNotExist:
-            appointment = None
-
-        if appointment:
-
-            appointment = Appointment.objects.select_for_update().get(pk=appointment.id)
-            appointment.status = Appointment.DONE
-            appointment.save()
-
-        else:
             return Response({'error': 'No processed appointment found for the patient'}, status=status.HTTP_400_BAD_REQUEST)
 
+        appointment.status = Appointment.DONE
+        appointment.save()
+
+        if user_credit.total_credits > 0:
+            user_credit.total_credits -= 1
+          
+        user_credit.save()
+
+        latest_price = CreditPrice.objects.latest('effective_date')
+        amount = latest_price.price_per_credit
+
+        message = f'Debited 1 session credit for session with Dr {request.user.first_name}'
+        credit_transaction = CreditTransaction.objects.create(
+            user=patient,
+            amount=amount,
+            message=message,
+            type=CreditTransaction.DEBIT,
+            paid=True
+        )
 
         serializer = SessionDetailSerializer(doctor_session)
 
@@ -213,6 +282,7 @@ def add_medications(request, id):
         return Response({'error': f'Failed to add medications: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response({'message': f'{len(medications)} medications were added to this session'}, status=status.HTTP_201_CREATED)
+
 
 
 

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Success</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .success-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            z-index: 10;
+        }
+        .success-icon {
+            color: #4CAF50;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        p {
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        .order-details {
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+        .back-button {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            background-color: #2196f3;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        .back-button:hover {
+            background-color: #1976d2;
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f0f0f0;
+            position: absolute;
+            top: -10px;
+            will-change: transform;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-card">
+        <div class="success-icon">&#10004;</div>
+        <h1>Payment Successful!</h1>
+        <p>Thank you for your purchase. Your order has been processed successfully.</p>
+        <div class="order-details">
+            <p><strong>Order Number:</strong>{{transaction_id}}</span></p>
+            <p><strong>Amount Paid:</strong> ${{amount}}</span></p>
+            <p><strong>Date:</strong> {{timestamp}}</span></p>
+        </div>
+        <a href="#" class="back-button" id="backButton">Back to Dashboard</a>
+    </div>
+
+    <script>
+        // Confetti animation
+        function createConfetti() {
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+            const confettiCount = 200;
+
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                document.body.appendChild(confetti);
+
+                animateConfetti(confetti);
+            }
+        }
+
+        function animateConfetti(confetti) {
+            const animation = confetti.animate([
+                { transform: 'translate3d(0, 0, 0)', opacity: 1 },
+                { transform: `translate3d(${Math.random() * 100 - 50}px, 100vh, 0)`, opacity: 0 }
+            ], {
+                duration: Math.random() * 3000 + 3000,
+                easing: 'cubic-bezier(0, .9, .57, 1)',
+                delay: Math.random() * 2000
+            });
+
+            animation.onfinish = () => confetti.remove();
+        }
+
+        // Start confetti animation when the page loads
+        window.addEventListener('load', createConfetti);
+
+        // Add click event listener to the back button
+        document.getElementById('backButton').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = "http://localhost:5173/dashboard";
+
+        });
+    </script>
+</body>
+</html>
+

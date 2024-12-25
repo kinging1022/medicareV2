@@ -30,7 +30,7 @@ class SessionMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DoctorSessionMessage
-        fields = ('id','created_by', 'created_at_formatted','body','type')
+        fields = ('id','created_by', 'created_at_formatted','body','type','get_image','get_video',)
 
       
 
@@ -41,6 +41,7 @@ class SessionMessageSerializer(serializers.ModelSerializer):
 class SessionDetailSerializer(serializers.ModelSerializer):
     messages = SessionMessageSerializer(read_only=True, many=True)
     consultation = ConsultationSerializer(read_only = True)
+    users = UserSerializer(many=True, read_only=True)
 
     class Meta:
         model = DoctorSession
@@ -58,6 +59,6 @@ class MedicationsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Medications
-        fields = ('id', 'doctor_session','name', 'weight', 'dosage','created_by','created_for','created_at_formatted' )
+        fields = ('id', 'doctor_session','name', 'weight', 'dosage','created_by','created_for','created_at_formatted','has_reminder' )
     
     

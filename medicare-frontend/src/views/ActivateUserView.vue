@@ -25,8 +25,6 @@ export default {
         activateUser(){
             const uid = this.$route.params.uid
             const token = this.$route.params.token
-            console.log(uid)
-            console.log(token)
             axios
                 .post("/api/auth/users/activation/",{
                     uid: uid,

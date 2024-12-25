@@ -42,6 +42,10 @@
             Don't have an account? 
             <router-link to="/signup" class="text-teal-500 hover:underline">Sign up</router-link>
           </p>
+          <p class="text-sm text-gray-600 text-center mt-4">
+            Forgot Password? 
+            <router-link to="/password/reset/" class="text-teal-500 hover:underline">Reset</router-link>
+          </p>
         </form>
       </div>
     </div>
@@ -89,10 +93,7 @@ export default {
           
           const response = await axios.post("/api/auth/token/login/", this.formData);
           this.userStore.setToken(response.data);
-
-          
-          this.toastStore.showToast(5000, "Login successfully.", "bg-emerald-500");
-
+        
           
           Object.keys(this.formData).forEach((key) => {
             this.formData[key] = "";
@@ -104,23 +105,25 @@ export default {
           
 
           this.$router.push('/dashboard')
+          this.toastStore.showToast(5000,`welcome ${this.userStore.user.first_name}`, "bg-emerald-500");
 
-        } catch (error) {
-          if (error.response && error.response.data) {
-            console.log(error.response.data)
-            const serverErrors = error.response.data;
-            Object.keys(serverErrors).forEach((field) => {
-              this.errors[field] = serverErrors[field][0];
-            });
-
-            if (serverErrors.detail==="No active account found with the given credentials"){
-                this.resendActivationEmail()
-            }
+        } catch (err) {
+        if (err.response && err.response.data) {
+          if (err.response.data.detail === 'Account is inactive') {
+            this.errors = 'Your account is inactive. Check your email or  contact support.'
+            this.resendActivationEmail()
+            this.toastStore.showToast(5000, this.errors, "bg-emerald-500");
+          } else if (err.response.data.detail === 'No active account found with the given credentials') {
+            this.errors = 'Invalid username or password.'
+            this.toastStore.showToast(5000, this.errors, "bg-red-500");
+          } else {
+            this.errors = 'An error occurred. Please try again.'
+            this.toastStore.showToast(5000, this.errors, "bg-red-500");
           }
-
-          
-          this.toastStore.showToast(5000, "Login failed. Please check your inputs.", "bg-red-500");
+        } else {
+          this.error = 'An error occurred. Please try again.'
         }
+      }
       }
     },
     async resendActivationEmail(){
@@ -128,7 +131,6 @@ export default {
             const response = await axios.post('/api/auth/users/resend_activation/',{
                 email:this.formData.email
             })
-            this.toastStore.showToast(5000, 'Check your email to activate your account.', 'bg-emerald-500');
         }catch(error){
             console.log(error)
         }

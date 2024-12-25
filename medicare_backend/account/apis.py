@@ -7,6 +7,29 @@ from .models import User
 from rest_framework.permissions import IsAuthenticated
 from consultations.models import Medications
 from consultations.serializers import MedicationsSerializer
+from .serializers import CustomTokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+
+from rest_framework_simplejwt.tokens import RefreshToken
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data= request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
 
 @api_view(['PATCH'])
 def update_profile(request,id):
@@ -31,16 +54,39 @@ def update_profile(request,id):
 
 
 @api_view(['GET'])
-def get_medications(request,id):
+def get_medications(request):
+    medications = Medications.objects.filter(created_for=request.user)
+  
+    serializer = MedicationsSerializer(medications, many=True)
+    return Response(serializer.data)
+    
 
-    medications = Medications.objects.filter(created_for_id = id)
 
-    if not medications.exists():
-        return Response({'detail': "No medications found"}, status=status.HTTP_400_BAD_REQUEST)
 
-    serializer = MedicationsSerializer(medications,many=True)
+
+@api_view(['POST'])
+def update_timezone(request):
+    time_zone = request.data.get('timezone')
+
+    user = request.user
+    user.timezone = time_zone
+    user.save()
+
+    return Response({'message': 'Timezone updated successfully'}, status=200)
+
+
+
+@api_view(['GET'])
+def get_doctors(request):
+    doctors = User.objects.filter(role=User.DOCTOR)
+
+    serializer = UserSerializer(doctors, many=True)
 
     return Response(serializer.data)
+
+    
+
+
    
 
    

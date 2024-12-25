@@ -1,11 +1,7 @@
 import { defineStore } from "pinia";
 import axios from "axios";
-import { reactive } from "vue";
-import router from "@/router";
 
-export const useUserStore = defineStore({
-  id: "user",
-
+export const useUserStore = defineStore("user", {
   state: () => ({
     user: {
       isAuthenticated: false,
@@ -22,19 +18,19 @@ export const useUserStore = defineStore({
       blood_type: null,
       height: null,
       weight: null,
+      timezone: null,
       allergies: null,
       emergency_contact: null,
-      unread_notification_count:0
+      unread_notification_count: 0,
     },
     notificationSocket: null,
     activeSessionStatus: null,
-    activeSessionSocket: null,
     latestAppointment: null,
-    notifications:[],
-    activeSession: [],
-    notificationType: null
-    
-
+    notifications: [],
+    activeSession: {},
+    notificationType: null,
+    activeDoctor:{first_name:'', last_name:''},
+    activePatient:{first_name:'', last_name:''},
   }),
 
   actions: {
@@ -58,13 +54,12 @@ export const useUserStore = defineStore({
 
         if (data.action === "list") {
           this.notifications = data.data;
-          console.log('notif',data.data)
           this.user.unread_notification_count = this.notifications.filter((n) => !n.is_read).length;
           this.saveUserToLocalStorage();
         } else if (data.action === "create") {
           const notification = data.data;
           if (notification.created_for.id === this.user.id) {
-            this.notificationType = data.data.type_of_notification
+            this.notificationType = notification.type_of_notification;
             this.notifications.unshift(notification);
             this.user.unread_notification_count++;
             this.saveUserToLocalStorage();
@@ -73,109 +68,80 @@ export const useUserStore = defineStore({
       };
 
       ws.onclose = () => {
-        this.notificationSocket = null; 
+        this.notificationSocket = null;
       };
     },
-
-    getActiveSession() {
-      const ws = new WebSocket(`ws://localhost:8000/ws/session-chat/?token=${this.user.access}`);
-      this.activeSessionSocket = ws;
-
-      ws.onopen = () => {
-        ws.send(
-          JSON.stringify({
-            action: "list",
-            request_id: new Date().getTime(),
-          })
-        );
-      };
-
-      ws.onmessage = (e) => {
+    async updateTimezone() {
         try {
-          const response = JSON.parse(e.data);
-          console.log('WebSocket response:', response);
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            this.timezone = timezone;
 
-          if (!response.action) return;
-
-          if (response.action === "list") {
-            const data = response.data;
-            console.log(data)
-            if (Array.isArray(data) && data.length > 0) {
-              this.activeSession = data
-              this.activeSessionStatus = data[0].status 
-              
-            } else {
-              console.error("No data or messages found.");
-            }
-          } else if (response.action === 'create') {
-            
-          }
+            await axios.post('/api/user/update-timezone/', { timezone });
+            this.saveUserToLocalStorage();
         } catch (error) {
-          console.error("Error parsing WebSocket message:", error);
         }
-      };
-
-      ws.onclose = (e) => {
-        console.warn("WebSocket closed:", e.reason || "No reason provided");
-        this.activeSessionSocket = null;
-        
-      };
-
-      ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
-      };
     },
-    
-    async getActiveSession(){
-      try{
-        const response = await axios.get('api/consultation/active-session/')
-        if ( response.status === 200){
-          console.log('active',response.data)
-           this.activeSession = response.data
-           this.activeSessionStatus = response.data[0].status
-           console.log(this.activeSessionStatus)
-        }
 
+    async getActiveSession() {
+
+      try{
+            const response = await axios.get('/api/consultation/active-session/')
+            this.activeSession = response.data
+            this.activeSessionStatus = response.data.status
+            const users = response.data.users
+            this.activePatient= users.find(user => user.role === "patient");
+            this.activeDoctor = users.find(user => user.role === "doctor")
+            
+            
       }catch(error){
-        
+        if (error && error.response && error.status === 500){
+          this.activeSession = {}
+          this.activeSessionStatus = null
+        }
 
       }
 
-    },
-    
-    
-    markNotificationAsRead(id){
-      const notification = this.notifications.find(n => n.id === id);
-      if (notification) notification.is_read = true;
-    },
-    markNotificationsAsread(){
-        this.notifications.forEach(notification =>{
-          notification.is_read = true;
-        })
-    },
-    incrementNotificationCount(){
-      this.user.unread_notification_count += 1;
-      this.saveUserToLocalStorage();     
+
+  },
+
+    clearActiveSession(){
+      this.activeSession = {}
+      this.activeSessionStatus = 'ended'
 
     },
-    decrementNotificationCount(count=1){
-        this.user.unread_notification_count = Math.max(
-          this.user.unread_notification_count - count, 0
-        );
-        this.saveUserToLocalStorage();
+
+    markNotificationAsRead(id) {
+      const notification = this.notifications.find((n) => n.id === id);
+      if (notification) notification.is_read = true;
     },
+
+    markNotificationsAsread() {
+      this.notifications.forEach((notification) => {
+        notification.is_read = true;
+      });
+    },
+
+    incrementNotificationCount() {
+      this.user.unread_notification_count += 1;
+      this.saveUserToLocalStorage();
+    },
+
+    decrementNotificationCount(count = 1) {
+      this.user.unread_notification_count = Math.max(this.user.unread_notification_count - count, 0);
+      this.saveUserToLocalStorage();
+    },
+
     resetNotificationCount() {
       this.user.unread_notification_count = 0;
-      this.saveUserToLocalStorage(); 
+      this.saveUserToLocalStorage();
     },
+
     initStore() {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
         this.user = { ...this.user, ...parsedUser, isAuthenticated: true };
-        
       }
-      
     },
 
     setToken(data) {
@@ -210,11 +176,14 @@ export const useUserStore = defineStore({
         weight: null,
         allergies: null,
         emergency_contact: null,
-        unread_notification_count:0
+        unread_notification_count: 0,
+        timezone: null
       };
-      this.activeSession = [];
+      this.activeSession = {};
+      this.activeDoctor = {}
+      this.activePatient = {}
       this.notifications = [];
-      if(this.notificationSocket){
+      if (this.notificationSocket) {
         this.notificationSocket.close();
         this.notificationSocket = null;
       }
@@ -243,3 +212,4 @@ export const useUserStore = defineStore({
     },
   },
 });
+

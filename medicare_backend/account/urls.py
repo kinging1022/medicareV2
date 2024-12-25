@@ -1,23 +1,21 @@
 from django.urls import path, include
 from djoser import views as djoser_views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
-from . import apis
+from .apis import CustomTokenObtainPairView, update_profile , update_timezone, get_doctors, get_medications
 
 urlpatterns = [
-    # Uncomment the following paths if you want to use custom user views
-    # path('auth/users/', djoser_views.UserViewSet.as_view({'post': 'create'}), name='user-create'),
-    # path('auth/users/<uuid:pk>/', djoser_views.UserViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='user-detail'),
-    # path('auth/users/me/', djoser_views.UserViewSet.as_view({'get': 'me'}), name='user-me'),
-
     # Custom JWT views for login, refresh, and verify
-    path('auth/token/login/', TokenObtainPairView.as_view(), name='token'),
+    path('auth/token/login/', CustomTokenObtainPairView.as_view(), name='token_obtain'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  
     path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-    path('update/<uuid:id>/', apis.update_profile, name='update_profile'),
-    path('account/medications/<uuid:id>/', apis.get_medications, name='get_medications'),
+    path('update/<uuid:id>/', update_profile, name='update_profile'),
+    path('user/update-timezone/', update_timezone, name='update_timezone'),
+    path('account/medications/', get_medications, name='get_medications'),
+    path('account/get_doctors/', get_doctors, name='get_doctors'),
     
     # Djoser URLs
     path('auth/', include('djoser.urls')),
     
      
 ]
+

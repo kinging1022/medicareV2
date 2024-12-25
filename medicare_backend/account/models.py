@@ -63,6 +63,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    timestamp = models.CharField(max_length=200, blank=True, null=True)
+    timezone = models.CharField(max_length=200, blank=True, null=True)
 
 
     def display_age(self):

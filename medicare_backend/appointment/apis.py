@@ -7,6 +7,7 @@ from notification.models import Notification
 from account.models import User
 
 from notification.utils import create_notification
+from payments.models import UserCredit
 
 
 @api_view(['POST'])
@@ -20,6 +21,18 @@ def create_appointment(request):
         return Response(
             {'error': 'You cannot create a new appointment until your current appointmemt is completed'}, status=status.HTTP_400_BAD_REQUEST
         )
+    
+    try:
+    
+        user_credit = UserCredit.objects.get(user=user)
+    
+    except UserCredit.DoesNotExist:
+        return Response({'error':'You have to purchase sesion credit before you can create an appointment'},status=status.HTTP_401_UNAUTHORIZED)
+    
+    if user_credit.total_credits <= 0:
+        return Response({'error':'Your session credit balance is low, kindly recharge and try again '},status=status.HTTP_400_BAD_REQUEST)
+    
+    
     
     body = request.data.get('body')
     created_for = request.data.get('created_for')
@@ -47,5 +60,6 @@ def create_appointment(request):
 
 
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 

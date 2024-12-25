@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User
 
 
@@ -40,3 +41,26 @@ class UserSerializer(serializers.ModelSerializer):
         )
         fields = ('id','email','first_name','dob','last_name', 'display_age' , 'gender','role','height',
                   'weight','allergies','blood_type','emergency_contact','unread_notification_count')
+
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+
+        try:
+            user = User.objects.get(email=email)
+            if not user.check_password(password):
+                raise Exception('No active account found with the given credentials')
+            
+            if not user.is_active:
+                raise Exception('Account is inactive')
+            
+        except User.DoesNotExist:
+            raise Exception('No active account found with the given credentials')
+
+
+        data = super().validate(attrs)
+        return data

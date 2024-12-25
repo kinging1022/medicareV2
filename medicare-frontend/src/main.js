@@ -10,12 +10,15 @@ import axios from 'axios';
 
 
 axios.defaults.baseURL = "http://127.0.0.1:8000";
+window.global = window.global || window;
+
 
 const app = createApp(App);
 
 
 app.use(createPinia());
 app.use(router);
+
 
 // Initialize the store
 const userStore = useUserStore(); 
@@ -48,6 +51,8 @@ axios.interceptors.response.use(
                 return axios(originalRequest); 
             } catch (error) {
                 userStore.removeToken();
+                alert('Your session has expired. Please log in again.');
+
                 router.push('/login');
             }
         }
@@ -58,3 +63,4 @@ axios.interceptors.response.use(
 
 
 app.mount('#app');
+
