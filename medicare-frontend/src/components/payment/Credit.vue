@@ -59,7 +59,7 @@
       }
     },
     async mounted() {
-        this.stripe = await loadStripe('pk_test_51Nvpa4DKVhjsHmLlBbJdLtKncbK1HndKoi100AyqlpDOUIzGGlpt4vbmOVg9FvktPXkppHYCGUC49JwBoR85M1IQ00cK6NtTvE')
+        this.stripe = await loadStripe('stripe publishable key')
         await this.fetchCreditPrice();
   },
     computed: {

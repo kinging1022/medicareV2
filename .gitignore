@@ -27,7 +27,7 @@ medicare_backend/celerybeat-schedule.db
 
 # Virtual environment
 medicare_backend/myenv/
-myenv/
+
 
 # Environment variables
 medicare_backend/.env
@@ -45,8 +45,4 @@ medicare_backend/.env
 # TypeScript
 *.tsbuildinfo
 
-# General
-.DS_Storemyenv/
-*.pyc
-myenv/
-*.pyc
+
