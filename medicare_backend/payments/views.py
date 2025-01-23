@@ -13,7 +13,7 @@ def success(request):
         transaction = CreditTransaction.objects.get(id=transaction_id)
 
         if not transaction.paid:
-            return redirect('payment-cancel')
+            return redirect('payment_cancel')
 
         context = {
             'transaction_id': transaction_id,

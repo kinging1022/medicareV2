@@ -59,6 +59,7 @@ def create_consultation(request, id):
 def get_or_create_doctor_session(request, consultation_id, patient_id):
     try:
         patient = User.objects.get(pk=patient_id)
+        print(f'name: {patient.first_name}')
     except User.DoesNotExist:
         return Response({"error": "Patient not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -69,7 +70,7 @@ def get_or_create_doctor_session(request, consultation_id, patient_id):
     
     with transaction.atomic():
 
-        doctor_sessions = DoctorSession.objects.filter(users__in=[request.user, patient]).distinct()
+        doctor_sessions = DoctorSession.objects.filter(users=request.user).filter(users=patient).distinct()
 
         if doctor_sessions.exists():
             doctor_session = doctor_sessions.first()

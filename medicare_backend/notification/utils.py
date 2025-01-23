@@ -26,3 +26,5 @@ def create_notification(created_by, created_for, notification_type):
        
 
     return notification
+
+
